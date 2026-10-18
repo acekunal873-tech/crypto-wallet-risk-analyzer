@@ -13,6 +13,7 @@ async function main() {
     id: 1
     })
     })
+
     if(!data.ok) {
     throw new Error("HTTP request failed:"+ data.status)
     }
@@ -35,8 +36,14 @@ const params = new URLSearchParams({
     sort: "desc",
     apikey: process.env.ETHERSCAN_API_KEY
 });
+const url = `${etherscanUrl}?${params.toString()}`;
 
 const historyResponse = await fetch(url)
+
+if (!historyResponse.ok) {
+    throw new Error("Etherscan HTTP request failed: " + historyResponse.status);
+} 
+
 let historydata = await historyResponse.json()
 if(historydata.status !== "1") {
     throw  new Error(historydata.result)
@@ -51,6 +58,8 @@ let riskReasons = []
 let knownScamAddresses = []
 let riskScore = 0
 let  foundSuspicious = false
+
+
 knownScamAddresses.push("0x4838b106fce9647bdf1e7877bf73ce8b0bad5f97")
 let historyfrom = historydata.result
 for(let i = 0; i < historyfrom.length ; i++) {
@@ -67,14 +76,14 @@ let currentReceiver = historyfrom[i].to;
 let normalizedReceiver = currentReceiver.toLowerCase()
 let currentAddress = historyfrom[i].from
 let normalizedSender = currentAddress.toLowerCase()
-if(currentAddress in addressCounts) {
-    addressCounts[currentAddress]++
+if (normalizedSender in addressCounts) {
+    addressCounts[normalizedSender]++;
 } else {
-    addressCounts[currentAddress] = 1
+    addressCounts[normalizedSender] = 1;
 }
  if ((knownScamAddresses.includes(normalizedSender) || knownScamAddresses.includes(normalizedReceiver)) && foundSuspicious === false ) {
-    console.log("Known suspicious address found!")
-        riskReasons.push("Known suspicious address matched in sender or receiver");
+    console.log("Configured test address matched!")
+        riskReasons.push("Configured test address matched in sender or receiver");
         riskScore += 40;
         foundSuspicious = true
 }
@@ -95,9 +104,12 @@ try{
     id: 2
        })
 })
- if(!response.ok) {
-    throw new Error("HTTP request failed:"+   response.status)
-    }
+
+if (!response.ok) {
+    throw new Error("Balance HTTP request failed: " + response.status);
+}
+
+
 let balance = await response.json()
 if(balance.error) {
     throw new Error(balance.error.message)
@@ -144,6 +156,7 @@ for(let address in addressCounts ) {
     if(addressCounts[address] >= 3) {
          riskScore += 20
          riskReasons.push("Repeated sender detected: +20 risk points")
+         break;
     }
 }
 if (riskScore >= 51) {
@@ -186,7 +199,3 @@ console.log("===================================")
 main().catch(function(er) {
     console.log("error",er.message)
 })
-// Practicing Git diff
-// Practicing Git branches
-// Practicing Git brancheszdssd
-// Practicing Git brancheszdssdfdssdfgit switch main
